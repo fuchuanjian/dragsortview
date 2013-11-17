@@ -1,4 +1,4 @@
-gen
-bin
-*.project
-*.classpath
+/gen
+/bin
+/.project
+/.classpath
