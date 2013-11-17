@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/drag_handle"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/drag_view_title_height" >  
+   <ImageView
+        android:id="@+id/dragview_icon_img"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_centerVertical="true"
+        android:src="@drawable/weather_forecast_icon" />
+    
+    <TextView
+        android:id="@+id/title_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@id/dragview_icon_img"
+        android:layout_marginLeft="8dp"
+        android:layout_centerVertical="true"
+        android:textColor="@android:color/white"
+        android:textSize="15dp" />
+
+    <ImageView
+        android:id="@+id/corner_img"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_centerVertical="true"
+        android:src="@drawable/drag_view_handle" />
+
+    <View
+        android:id="@+id/devider"
+        android:layout_width="fill_parent"
+        android:layout_height="1dp"
+        android:layout_alignParentBottom= "true"
+        android:background="@drawable/weather_list_divider" />
+
+</RelativeLayout>

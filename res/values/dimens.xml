@@ -1,0 +1,11 @@
+<resources>
+
+    <!-- Default screen margins, per the Android Design guidelines. -->
+    <dimen name="activity_horizontal_margin">16dp</dimen>
+    <dimen name="activity_vertical_margin">16dp</dimen>
+    <dimen name="drag_view_title_height">35dp</dimen> 
+    <dimen name="drag_view_margin_left">15dp</dimen>
+    <dimen name="drag_view_padding">4dp</dimen>
+    <dimen name="drag_view_margin_side">3dp</dimen> 
+    <dimen name="dragview_container_bottom_margin">10dp</dimen>
+</resources>
