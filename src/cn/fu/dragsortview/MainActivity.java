@@ -13,10 +13,13 @@ public class MainActivity extends Activity
 	protected void onCreate(Bundle savedInstanceState)
 	{
 		super.onCreate(savedInstanceState);
-		  this.requestWindowFeature(Window.FEATURE_NO_TITLE);
-	      this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, 
-	                WindowManager.LayoutParams.FLAG_FULLSCREEN);
-		DragSortView dragSortView = new DragSortView(this);
+		
+		// Full screen
+		this.requestWindowFeature(Window.FEATURE_NO_TITLE);
+		this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+		
+		//just add a dragSortView
+		DragSortViewGroup dragSortView = new DragSortViewGroup(this);
 		setContentView(dragSortView);
 	}
 }

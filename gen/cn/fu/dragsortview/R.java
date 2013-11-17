@@ -22,24 +22,26 @@ public final class R {
         public static final int dragview_container_bottom_margin=0x7f040006;
     }
     public static final class drawable {
-        public static final int drag_view_handle=0x7f020000;
-        public static final int ic_launcher=0x7f020001;
-        public static final int weather_forcast_bg=0x7f020002;
-        public static final int weather_forcast_bg_frame=0x7f020003;
-        public static final int weather_forecast_icon=0x7f020004;
-        public static final int weather_list_divider=0x7f020005;
+        public static final int bg_divider=0x7f020000;
+        public static final int bg_handle=0x7f020001;
+        public static final int bg_normal=0x7f020002;
+        public static final int bg_pressed=0x7f020003;
+        public static final int bg_titile_icon=0x7f020004;
+        public static final int ic_launcher=0x7f020005;
     }
     public static final class id {
-        public static final int corner_img=0x7f070003;
-        public static final int devider=0x7f070004;
-        public static final int drag_handle=0x7f070000;
-        public static final int dragview_icon_img=0x7f070001;
-        public static final int title_text=0x7f070002;
+        public static final int bg_handle_img=0x7f070005;
+        public static final int bg_icon_img=0x7f070003;
+        public static final int devider=0x7f070006;
+        public static final int drag_handle=0x7f070002;
+        public static final int title_text=0x7f070004;
+        public static final int view_description_tv=0x7f070001;
+        public static final int view_head_picture=0x7f070000;
     }
     public static final class layout {
-        public static final int drag_item_title=0x7f030000;
-        public static final int dragview_test=0x7f030001;
-        public static final int main=0x7f030002;
+        public static final int main=0x7f030000;
+        public static final int view_content_layout=0x7f030001;
+        public static final int view_title_layout=0x7f030002;
     }
     public static final class string {
         public static final int action_settings=0x7f050001;

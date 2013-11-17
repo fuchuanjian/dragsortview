@@ -22,57 +22,55 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.Scroller;
 
-public class DragSortView extends ViewGroup
+public class DragSortViewGroup extends ViewGroup
 {
+	// main Params
 	private Context mContext;
+	private ArrayList<ViewInfo> infoContainerList = new ArrayList<ViewInfo>();
+	private LinearLayout targetView;
+	private ViewInfo targetViewContainer;
+	private Scroller mScroller;
 	
-	//各种拖拽view 之间的间隔 在values dimens中设置 drag_view_padding
-	private int dragView_Padding;
+	//related with press or drag state 
 	private static final int IDLE = 0;
 	private static final int DRAGING = 1;
 	private static final int UP = 2;
 	private static final int NOT_MEASURE = -3;
 	private static  int myMode = IDLE;
+	
+	// some final prams
 	private final int DIFF = 10;
+	private final int LONGPRESS_DELAY = 500;
+	private final int UP_SCROLL = -1;
+	private final int STOP_SCROLL = 0;
+	private final int DOWN_SCROLL = 1;
+	private final int mAutoScrollInterval_time = 0;   
+	private final int DEFLAUT_VALUE = -1;
+	
+	//tmp prams
+	private int dragView_Padding;
 	private int lastDownY = -1;
 	private int targetOrder = -1;
 	private int detalY =0;
 	private int lastTagetPosY = 0;
 	private int targetViewPosY = 0;
-	private final int LONGPRESS_DELAY = 500;
 	private int mCurScrollY = 0;
 	private int dragRangeUpLine = 0;
 	private int dragRangeBottomLine = 0; 
-	private final int UP_SCROLL = -1;
-	private final int STOP_SCROLL = 0;
-	private final int DOWN_SCROLL = 1;
 	private int mAutoScrolDirection = 0;
-	private int mAutoScrollInterval = 2;				// 每次滚动距离的间隔
-	private final int mAutoScrollInterval_time = 0;     // 每次滚动距离的时间间隔
-	private final int DEFLAUT_VALUE = -1;
-	private int getEventY = 0;
-	private float scale = 1.0f;      //屏幕分辩率 
-	private boolean isMessure = false;
-	
+	private int mAutoScrollInterval = 2;				
+	private int getEventY = 0;	
 	private int dragViewMarginSide = 4;
 	private int totalMarginBottom;
-	private LinearLayout targetView;
-	private ViewInfo targetViewContainer;
-	private int screenW; // 屏幕宽度
-	private int screenH; // 屏幕高度
-	private Scroller mScroller;
+	private int screenW; 
+	private int screenH; 
 	private int sumDragViewHeight = 0;
-	private ArrayList<ViewInfo> infoContainerList = new ArrayList<ViewInfo>();
-	
-//	private ForecastDragView mWeatherForecastView; // 天气预报区域
-//	private TrendWeatherDragView mTrendWeatherDragView; // 天气趋势区域
-//	private LifeInfoView mLifeInfoView; // 生活指数区域
-//	private PressureDragView mPressureDragView; //气压风速栏
-	
+	private float scale = 1.0f;      
+	private boolean isMessure = false;
 	private boolean isTargetAnimaFinished = true;
 	private boolean isAdjustAnimaFinished = true;
 
-	public DragSortView(Context context)
+	public DragSortViewGroup(Context context)
 	{
 		super(context);
 		init(context);
@@ -91,18 +89,18 @@ public class DragSortView extends ViewGroup
 		//这是整个dragviewcontainer 预留底部的间隙
 		totalMarginBottom = mContext.getResources().getDimensionPixelSize(R.dimen.dragview_container_bottom_margin);
 		
-		DragViewFrame myView1 = new DragViewFrame(context);
-		DragViewFrame myView2 = new DragViewFrame(context);	
-		DragViewFrame myView3 = new DragViewFrame(context);
-		DragViewFrame myView4 = new DragViewFrame(context);	
-		addWightViewItem(context, myView1, "view1", screenW);
-		addWightViewItem(context, myView2, "view2", screenW);
-		addWightViewItem(context, myView3, "view1", screenW);
-		addWightViewItem(context, myView4, "view2", screenW);
+		CustomDragView myView1 = new CustomDragView(context);
+		CustomDragView myView2 = new CustomDragView(context);	
+		CustomDragView myView3 = new CustomDragView(context);
+		CustomDragView myView4 = new CustomDragView(context);	
+		addWightViewItem(context, myView1, "view1");
+		addWightViewItem(context, myView2, "view2");
+		addWightViewItem(context, myView3, "view3");
+		addWightViewItem(context, myView4, "view4");
 		
 		sortWightView();
 	}
-	private void addWightViewItem(Context context, View view ,String nickName, int screenW) {
+	private void addWightViewItem(Context context, View view ,String nickName) {
 		// 只是添加,没有布局
 		addView(view);
 		ViewGroup.MarginLayoutParams lp = new ViewGroup.MarginLayoutParams(
@@ -227,7 +225,7 @@ public class DragSortView extends ViewGroup
 			case MotionEvent.ACTION_UP:
 				//Log.i("fu", "draging UP目标tar"+targetOrder);
 				myMode = IDLE;
-				((BaseDragView)targetView).changeModeToIDLE();
+				((BaseView)targetView).changeModeToIDLE();
 				setSrollDirction(STOP_SCROLL);
 				autoScrollHandler.removeCallbacks(scrollrRunnable);	
 				mLongPressHandler.removeCallbacks(mLongPressRunnable);
@@ -244,7 +242,7 @@ public class DragSortView extends ViewGroup
 				
 			case MotionEvent.ACTION_CANCEL:
 				myMode = IDLE;
-				((BaseDragView)targetView).changeModeToIDLE();
+				((BaseView)targetView).changeModeToIDLE();
 				//Log.i("fu",  "draging canel事件 cancel目标tar"+targetOrder);
 				setSrollDirction(STOP_SCROLL);
 				autoScrollHandler.removeCallbacks(scrollrRunnable);	
@@ -568,7 +566,7 @@ public class DragSortView extends ViewGroup
 		@Override
 		public void run() {
 			myMode = DRAGING;
-			((BaseDragView)targetView).changeModeToDRAGING();
+			((BaseView)targetView).changeModeToDRAGING();
 			vibrate();
 		}
 	};

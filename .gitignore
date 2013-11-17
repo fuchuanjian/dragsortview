@@ -1,6 +1,4 @@
-.svn
 gen
 bin
-lint.xml
-.project
-.classpath
+*.project
+*.classpath
