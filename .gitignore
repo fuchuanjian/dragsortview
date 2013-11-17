@@ -1,0 +1,6 @@
+.svn
+gen
+bin
+lint.xml
+.project
+.classpath
