@@ -4,9 +4,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 
+import android.R.integer;
 import android.app.Service;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.os.Handler;
 import android.os.Message;
 import android.os.Vibrator;
@@ -30,6 +32,9 @@ public class DragSortViewGroup extends ViewGroup
 	private LinearLayout targetView;
 	private ViewInfo targetViewContainer;
 	private Scroller mScroller;
+	private AccelerateInterpolator acInterpolator = new AccelerateInterpolator();
+	private Handler mHanler = new Handler();
+	private int startY = 0;
 	
 	//related with press or drag state 
 	private static final int IDLE = 0;
@@ -58,7 +63,7 @@ public class DragSortViewGroup extends ViewGroup
 	private int dragRangeUpLine = 0;
 	private int dragRangeBottomLine = 0; 
 	private int mAutoScrolDirection = 0;
-	private int mAutoScrollInterval = 2;				
+	private int mAutoScrollInterval = 10;				
 	private int getEventY = 0;	
 	private int dragViewMarginSide = 4;
 	private int totalMarginBottom;
@@ -67,8 +72,7 @@ public class DragSortViewGroup extends ViewGroup
 	private int sumDragViewHeight = 0;
 	private float scale = 1.0f;      
 	private boolean isMessure = false;
-	private boolean isTargetAnimaFinished = true;
-	private boolean isAdjustAnimaFinished = true;
+	private int adjustAnimaCnt = 0;   // equal to 0 means none view is animating
 
 	public DragSortViewGroup(Context context)
 	{
@@ -76,13 +80,14 @@ public class DragSortViewGroup extends ViewGroup
 		init(context);
 	}
 	private void init(Context context) {
+		this.setBackgroundColor(Color.DKGRAY);
 		mScroller = new Scroller(context);
 		mContext = context;
 		screenW = getResources().getDisplayMetrics().widthPixels;
 		screenH = getResources().getDisplayMetrics().heightPixels;
 		//取dimen中dragview 之间预设的间隔
 		scale = context.getResources().getDisplayMetrics().density;    
-//		mAutoScrollInterval *= scale;
+		mAutoScrollInterval *= scale;
 		dragView_Padding = context.getResources().getDimensionPixelOffset(R.dimen.drag_view_padding);              //上下padding
 		dragViewMarginSide = context.getResources().getDimensionPixelOffset(R.dimen.drag_view_margin_side);        //自身左右margin
 		
@@ -102,8 +107,8 @@ public class DragSortViewGroup extends ViewGroup
 		
 		sortWightView();
 	}
-	private void addWightViewItem(Context context, View view ,String nickName) {
 		// just init view layoutparams here, not sort them, sort them later
+	private void addWightViewItem(Context context, View view ,String nickName) {
 		addView(view);
 		ViewGroup.MarginLayoutParams lp = new ViewGroup.MarginLayoutParams(
 				MarginLayoutParams.MATCH_PARENT,
@@ -135,7 +140,7 @@ public class DragSortViewGroup extends ViewGroup
 	@Override
 	protected void onLayout(boolean changed, int l, int t, int r, int b)
 	{
-		int nextTopMargin = 0 ;
+		int nextTopMargin = startY;
 		sumDragViewHeight = 0 ;
 		
 		for (int i = 0; i < containerList.size(); i++) {
@@ -232,27 +237,11 @@ public class DragSortViewGroup extends ViewGroup
 				break;
 				
 			case MotionEvent.ACTION_UP:
-				myMode = IDLE;
-				((BaseView)targetView).changeModeToIDLE();
-				setSrollDirction(STOP_SCROLL);
-				autoScrollHandler.removeCallbacks(scrollrRunnable);	
-				mLongPressHandler.removeCallbacks(mLongPressRunnable);
-				if (targetViewPosY < dragRangeUpLine)
-				{
-					targetViewPosY = dragRangeUpLine;
-				}
-				if (targetOrder != -1)
-				{
-					magneticTargetIem(targetOrder);
-					targetOrder = -1;
-				}
-				break;
-				
 			case MotionEvent.ACTION_CANCEL:
 				myMode = IDLE;
 				((BaseView)targetView).changeModeToIDLE();
 				setSrollDirction(STOP_SCROLL);
-				autoScrollHandler.removeCallbacks(scrollrRunnable);	
+				mHanler.removeCallbacks(mScrollRunable);	
 				mLongPressHandler.removeCallbacks(mLongPressRunnable);
 			//	targetViewPosY = (int) event.getY() + mCurScrollY - detalY;
 				if (targetViewPosY < dragRangeUpLine)
@@ -289,7 +278,7 @@ public class DragSortViewGroup extends ViewGroup
 		if (isCollideUp)	
 		{
 			//动画开始的标记
-			isAdjustAnimaFinished = false; 
+			adjustAnimaCnt ++; 
 			
 			// 跟上面的冲突了,上面的图往下移动
 			final ViewInfo upInfo = copyViewInfo(upViewContainer);
@@ -297,7 +286,7 @@ public class DragSortViewGroup extends ViewGroup
 			TranslateAnimation translateAnimation = new TranslateAnimation(0,
 					0, 0, targetInfo.height + dragView_Padding);
 			translateAnimation.setDuration((int)(targetInfo.height*1.5/scale));
-			translateAnimation.setInterpolator(new AccelerateInterpolator());
+			translateAnimation.setInterpolator(acInterpolator);
 			final LinearLayout view = upInfo.view;
 			MarginLayoutParams lp = (MarginLayoutParams) view.getLayoutParams();
 			lp.topMargin = upViewContainer.topMargin;
@@ -319,7 +308,7 @@ public class DragSortViewGroup extends ViewGroup
 
 				@Override
 				public void onAnimationEnd(Animation animation) {
-					// fix bug , when animation finished view twinkle, so add an empty animation for fixing bug
+					// fix bug ,view twinkle when animation finished , so add an empty animation for fixing bug
 					view.clearAnimation();
 					TranslateAnimation anim = new TranslateAnimation(0, 0, 0, 0);
 					view.startAnimation(anim);
@@ -330,13 +319,13 @@ public class DragSortViewGroup extends ViewGroup
 					view.requestLayout();
 //					view.invalidate();
 					//set flg when animation finished
-					isAdjustAnimaFinished = true;
+					adjustAnimaCnt --;
 				}
 			});
 			swapViewInfoContainerByOrder(targetOrder, upViewContainer.order);
 		} else if (isCollideDown) {		
 			//set flg when animaiton start
-			isAdjustAnimaFinished = false;
+			adjustAnimaCnt ++;
 			
 			final ViewInfo downInfo = copyViewInfo(downViewContainer);
 			final ViewInfo targetInfo = copyViewInfo(targetViewContainer);
@@ -344,7 +333,7 @@ public class DragSortViewGroup extends ViewGroup
 			TranslateAnimation translateAnimation = new TranslateAnimation(0,
 					0, 0, -targetInfo.height- dragView_Padding);
 			translateAnimation.setDuration((int)(targetInfo.height*1.5/scale));
-			translateAnimation.setInterpolator(new AccelerateInterpolator());
+			translateAnimation.setInterpolator(acInterpolator);
 			final LinearLayout view = downInfo.view;
 			MarginLayoutParams lp = (MarginLayoutParams) view.getLayoutParams();
 			lp.topMargin = downInfo.topMargin;
@@ -374,7 +363,7 @@ public class DragSortViewGroup extends ViewGroup
 					view.requestLayout();
 //					view.invalidate();
 					
-					isAdjustAnimaFinished = true;
+					adjustAnimaCnt --;
 				}
 			});
 			swapViewInfoContainerByOrder(targetOrder, downViewContainer.order);
@@ -454,9 +443,6 @@ public class DragSortViewGroup extends ViewGroup
 			containerList.get(to).topMargin = containerList
 					.get(targetFrom).topMargin
 					+ containerList.get(to).height + dragView_Padding;
-//			这里不能对LayoutParams操作 因为动画还没结束
-//			MarginLayoutParams lp = (MarginLayoutParams) infoContainerList.get(to).view.getLayoutParams();
-//			lp.topMargin = infoContainerList.get(to).topMargin;
 
 		} else {
 			containerList.get(targetFrom).topMargin = containerList
@@ -483,7 +469,7 @@ public class DragSortViewGroup extends ViewGroup
 	 */
 		private void magneticTargetIem(int targetOrder) {
 			//动画开始的标记
-			isTargetAnimaFinished = false;
+			adjustAnimaCnt ++;
 			
 			//用final类型变量计算，因为动画结束时有延迟的
 			final ViewInfo targetInfo = copyViewInfo(targetViewContainer);
@@ -491,7 +477,7 @@ public class DragSortViewGroup extends ViewGroup
 			TranslateAnimation translateAnimation = new TranslateAnimation(0, 0, 0,
 					-targetViewPosY + targetInfo.topMargin);
 			translateAnimation.setDuration((int)(Math.abs(-targetViewPosY + targetInfo.topMargin)*1.5/scale)); 
-			translateAnimation.setInterpolator(new AccelerateInterpolator());
+			translateAnimation.setInterpolator(acInterpolator);
 			// animationSet.addAnimation(translateAnimation);
 			targetInfo.view.startAnimation(translateAnimation);
 			translateAnimation.setAnimationListener(new AnimationListener() {
@@ -516,10 +502,14 @@ public class DragSortViewGroup extends ViewGroup
 					targetViewPosY = lp.topMargin;
 					targetInfo.view.setLayoutParams(lp);
 					targetInfo.view.requestLayout();
-//					targetViewContainer.view.invalidate();
 					
+					if (targetInfo.order == 0)
+					{
+						scrollTo(0, startY);
+					}
+						
 					//动画结束的标记
-					isTargetAnimaFinished = true;
+					adjustAnimaCnt --;
 				}
 			});
 
@@ -594,6 +584,18 @@ public class DragSortViewGroup extends ViewGroup
 		
 		return false;
 	}
+	private boolean checkIsAllowDownScroll()
+	{
+		if (targetOrder != 0)
+			return true;
+
+		if (mAutoScrolDirection != STOP_SCROLL)	
+			return true;
+//		if (targetOrder >0 && targetViewPosY < containerList.get(targetOrder-1).topMargin +  containerList.get(targetOrder-1).height*2/3)
+//			return true;
+		
+		return false;
+	}
 	
 	public void refreshAndSortDragView()
 	{
@@ -620,51 +622,50 @@ public class DragSortViewGroup extends ViewGroup
 		
 		//判断是否允许自动上移的标记，发生在当最后一个拖拽view在最下位置的时候
 		boolean isAllowUpScroll = checkIsAllowUpScroll();
+		boolean isAllowDownScroll = checkIsAllowDownScroll();
 		
-		
-		//如果view的高度太高，例如生活指数，就走这里
-		if (targetViewContainer.height > screenH/2)
-		{
-			if (event.getY()-detalY < (screenH)*0.1)
-			{
-				if (mAutoScrolDirection != DOWN_SCROLL)
-				{			
-					autoScrollHandler.post(scrollrRunnable);
-				}
-				setSrollDirction(DOWN_SCROLL);
-			}else if (event.getY() -detalY >  screenH*0.8 && isAllowUpScroll) 
-				{
-					if (mAutoScrolDirection != UP_SCROLL)
-					{
-						autoScrollHandler.post(scrollrRunnable);				
-					}
-					setSrollDirction(UP_SCROLL);
-				}else {
-					setSrollDirction(STOP_SCROLL);
-					autoScrollHandler.removeCallbacks(scrollrRunnable);
-				}
-		 return;
-		}
-		Log.i("fu", (event.getY() -detalY) +" " +  (screenH- targetViewContainer.height*0.8) );
-		//正常逻辑
-		if (event.getY()-detalY < (screenH)*0.1)
+//		//如果view的高度太高，例如生活指数，就走这里
+//		if (targetViewContainer.height > screenH/2)
+//		{
+//			if (event.getY()-detalY < (screenH)*0.1)
+//			{
+//				if (mAutoScrolDirection != DOWN_SCROLL)
+//				{			
+//					autoScrollHandler.post(scrollrRunnable);
+//				}
+//				setSrollDirction(DOWN_SCROLL);
+//			}else if (event.getY() -detalY >  screenH*0.8 && isAllowUpScroll) 
+//				{
+//					if (mAutoScrolDirection != UP_SCROLL)
+//					{
+//						autoScrollHandler.post(scrollrRunnable);				
+//					}
+//					setSrollDirction(UP_SCROLL);
+//				}else {
+//					setSrollDirction(STOP_SCROLL);
+//					autoScrollHandler.removeCallbacks(scrollrRunnable);
+//				}
+//		 return;
+//		}
+		//down_scroll
+		if (event.getY()-detalY < (screenH)*0.1 && isAllowDownScroll)
 		{
 			Log.i("fu", "DOWN_SCROLL "+ isAllowUpScroll );
 			if (mAutoScrolDirection != DOWN_SCROLL)
 			{			
-				autoScrollHandler.post(scrollrRunnable);
+				mHanler.post(mScrollRunable);
 			}
 			setSrollDirction(DOWN_SCROLL);
 		}else if (event.getY() -detalY >  screenH- targetViewContainer.height*0.8 && getScrollY() < sumDragViewHeight -screenH && isAllowUpScroll) {
 			Log.i("fu", "UP_SCROLL");
 			if (mAutoScrolDirection != UP_SCROLL)
 			{
-				autoScrollHandler.post(scrollrRunnable);				
+				mHanler.post(mScrollRunable);				
 			}
 			setSrollDirction(UP_SCROLL);
 		}else {
 			setSrollDirction(STOP_SCROLL);
-			autoScrollHandler.removeCallbacks(scrollrRunnable);
+			mHanler.removeCallbacks(mScrollRunable);
 		}
 		
 	}
@@ -672,66 +673,63 @@ public class DragSortViewGroup extends ViewGroup
 	{
 		mAutoScrolDirection = dir;
 	}
-	private Runnable scrollrRunnable = new Runnable() {
-		@Override
-		public void run() {
-			Message msg = autoScrollHandler.obtainMessage();
-			msg.sendToTarget();
-			autoScrollHandler.postDelayed(scrollrRunnable, mAutoScrollInterval_time);	
-		}
-		
-	};
 
-/**
- * 屏幕自动滚动的handler
- */
-	private Handler autoScrollHandler = new Handler()
+	private Runnable mScrollRunable = new Runnable()
 	{
-		public void handleMessage(android.os.Message msg) 
+		@Override
+		public void run()
 		{
 			if (targetView == null)
 			{
 				setSrollDirction(STOP_SCROLL);
-				autoScrollHandler.removeCallbacks(scrollrRunnable);
+				mHanler.removeCallbacks(mScrollRunable);
 				return;
 			}
 			MarginLayoutParams lp = (MarginLayoutParams) targetView.getLayoutParams();
 			switch (mAutoScrolDirection)
 			{
 				case UP_SCROLL:
-				if (getScrollY() >= sumDragViewHeight -screenH && targetViewContainer.height< screenH/2)
+				if ( getScrollY() >= sumDragViewHeight -screenH && targetViewContainer.height< screenH/2)
 					{
 						scrollTo(0, sumDragViewHeight - screenH);
 						setSrollDirction(STOP_SCROLL);
-						autoScrollHandler.removeCallbacks(scrollrRunnable);
+						mHanler.removeCallbacks(mScrollRunable);
 						return;
 					}
 				//两种情况，一种是当targetview 高度大于半个屏幕，另一种是高度低于半个屏幕
-				int py = targetViewContainer.height*2 > screenH ? targetViewContainer.height -screenH/2 : lp.height/2;
-				if (lp.topMargin >= dragRangeBottomLine- py)  {
-						lp.topMargin = dragRangeBottomLine-py;
-						lastTagetPosY = targetViewPosY;
-						targetViewPosY = dragRangeBottomLine-py;
-						targetView.setLayoutParams(lp);
-						setSrollDirction(STOP_SCROLL);
-						Log.i("fu", "up11 getScrollY =  "+ getScrollY());
-					}else {
-						
-						scrollBy(0, mAutoScrollInterval);
-//						getScroller().startScroll(0, getScrollY(), 0, mAutoScrollInterval, mAutoScrollInterval_time);
-//						mWeatherView.scrollBy(0, mAutoScrollInterval);
-						lp.topMargin += mAutoScrollInterval;
-						lastTagetPosY = targetViewPosY;
-						targetViewPosY = lp.topMargin;
-						targetView.setLayoutParams(lp);
-						targetView.requestLayout();
-//						targetView.invalidate();
-						adjustAllItems();		
-						Log.i("fu", "up getScrollY =  "+ getScrollY());
-					}
+//				int py = targetViewContainer.height*2 > screenH ? targetViewContainer.height -screenH/2 : lp.height/2;
+//				if (lp.topMargin >= dragRangeBottomLine- py)  {
+//						lp.topMargin = dragRangeBottomLine-py;
+//						lastTagetPosY = targetViewPosY;
+//						targetViewPosY = dragRangeBottomLine-py;
+//						targetView.setLayoutParams(lp);
+//						setSrollDirction(STOP_SCROLL);
+//						Log.i("fu", "up11 getScrollY =  "+ getScrollY());
+//					}else {
+//						
+//						scrollBy(0, mAutoScrollInterval);
+////						getScroller().startScroll(0, getScrollY(), 0, mAutoScrollInterval, mAutoScrollInterval_time);
+////						mWeatherView.scrollBy(0, mAutoScrollInterval);
+//						lp.topMargin += mAutoScrollInterval;
+//						lastTagetPosY = targetViewPosY;
+//						targetViewPosY = lp.topMargin;
+//						targetView.setLayoutParams(lp);
+//						targetView.requestLayout();
+////						targetView.invalidate();
+//						adjustAllItems();		
+//						Log.i("fu", "up getScrollY =  "+ getScrollY());
+//					}
+				scrollBy(0, mAutoScrollInterval);
+				lp.topMargin += mAutoScrollInterval;
+				lastTagetPosY = targetViewPosY;
+				targetViewPosY = lp.topMargin;
+				targetView.setLayoutParams(lp);
+				targetView.requestLayout();
+//				targetView.invalidate();
+				adjustAllItems();		
 					break;
 				case STOP_SCROLL:
-					autoScrollHandler.removeCallbacks(scrollrRunnable);
+					mHanler.removeCallbacks(mScrollRunable);
 					break;
 				case DOWN_SCROLL:
 					if (lp.topMargin <= dragRangeUpLine)
@@ -741,24 +739,26 @@ public class DragSortViewGroup extends ViewGroup
 						targetViewPosY = lp.topMargin;
 						targetView.setLayoutParams(lp);
 						setSrollDirction(STOP_SCROLL);
-						Log.i("fu", "down11 getScrollY =  "+ getScrollY());
 					}else {
-						getScroller().startScroll(0, getScrollY(), 0, -mAutoScrollInterval, mAutoScrollInterval_time);
+						mScroller.startScroll(0, getScrollY(), 0, -mAutoScrollInterval, mAutoScrollInterval_time);
 						scrollBy(0, -mAutoScrollInterval);
-//						mWeatherView.scrollBy(0, -mAutoScrollInterval);
 						lp.topMargin -= mAutoScrollInterval;
 						lastTagetPosY = targetViewPosY;
 						targetViewPosY = lp.topMargin;
 						targetView.setLayoutParams(lp);
 						targetView.requestLayout();
-//						targetView.invalidate();
 						adjustAllItems();	
-						Log.i("fu", "down getScrollY =  "+ getScrollY());
 					}
 					break;
 			}
+			mHanler.post(mScrollRunable);
 		}
 	};
+	
+	/**
+	 * sort item views by their order
+	 * {@link #ViewOrderComparator} 
+	 * */
 	private void sortWightView() {
 
 		Comparator<ViewInfo> comparator = new ViewOrderComparator();
@@ -766,10 +766,9 @@ public class DragSortViewGroup extends ViewGroup
 		for (int i = 0; i<containerList.size() ;i++)
 		{
 			containerList.get(i).order = i;
-			//重置 infoContainerList的数据
+			//reset not_measure flg
 			containerList.get(i).topMargin = NOT_MEASURE;
-//			mWeatherView.bringChildToFront(infoContainerList.get(i).view);
-			bringChildToFront(containerList.get(i).view);
+//			bringChildToFront(containerList.get(i).view);
 			OrderSettingUtil.setIntPref(mContext, containerList.get(i).name, containerList.get(i).order);
 		}
 		
@@ -789,18 +788,21 @@ public class DragSortViewGroup extends ViewGroup
 	}
 
 	/**
-	 * 判断拖拽动作的动画是否完全结束
+	 * check drag animation is finished
+	 * @see #adjustAnimaCnt
 	 */
 	private boolean isDragAnimationFinished()
 	{
-		if (myMode == IDLE && isAdjustAnimaFinished == true && isTargetAnimaFinished == true)
+		if (myMode == IDLE && adjustAnimaCnt == 0 )
 		{
 			return true;
 		}
 		
 		return false;
 	}
-	//清除内存
+	/**
+	 * clear up memory
+	 * */
 	public void release()
 	{
 		for (ViewInfo vi : containerList)
@@ -809,16 +811,13 @@ public class DragSortViewGroup extends ViewGroup
 		}
 		containerList.clear();
 	}
-	private Scroller getScroller()
-	{
-		return mScroller;
-	}
+	
 	
 	/**
 	 * Static Inner Class
 	 * */
 	
-	/**Comparator for sortting the index of dragview
+	/**an comparator for sortting the index of dragview
 	 * */
 	private static class ViewOrderComparator implements Comparator<ViewInfo>
 	{

@@ -31,7 +31,10 @@ public class CustomDragView extends BaseView
 		RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
 		//display width & height
 		lp.width = mScreenW;
-		lp.height = 100;
+		lp.height = 300;
+//		int paddingLeft = mHeaderPadding - dragViewMarginSide;
+//		int paddingRight = mHeaderPadding + dragViewMarginSide;
+//		view.setPadding(paddingLeft, 0, paddingRight, 0);
 		view.setLayoutParams(lp);
 		setContentView(view);   //setContentView to baseview
 

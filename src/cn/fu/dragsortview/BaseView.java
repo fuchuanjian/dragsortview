@@ -32,7 +32,8 @@ public class BaseView extends LinearLayout {
 	private int mMode = IDLE;
 	
 	protected int mScreenW; // screen width
-	
+	protected int mHeaderPadding = 15; // Header的左右Padding
+	protected int dragViewMarginSide = 4;
 	public BaseView(Context context) {
 		super(context);
 		initBaseView(context);
