@@ -39,5 +39,10 @@ public class CustomDragView extends BaseView
 		setContentView(view);   //setContentView to baseview
 
 	}
+	@Override
+	public void updateDate()
+	{
+		// TODO Auto-generated method stub
+	}
 	
 }

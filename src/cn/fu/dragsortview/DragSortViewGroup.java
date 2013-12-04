@@ -88,8 +88,8 @@ public class DragSortViewGroup extends ViewGroup
 		//取dimen中dragview 之间预设的间隔
 		scale = context.getResources().getDisplayMetrics().density;    
 		mAutoScrollInterval *= scale;
-		dragView_Padding = context.getResources().getDimensionPixelOffset(R.dimen.drag_view_padding);              //上下padding
-		dragViewMarginSide = context.getResources().getDimensionPixelOffset(R.dimen.drag_view_margin_side);        //自身左右margin
+		dragView_Padding = context.getResources().getDimensionPixelOffset(R.dimen.drag_view_padding);              //top and bottom padding
+		dragViewMarginSide = context.getResources().getDimensionPixelOffset(R.dimen.drag_view_margin_side);        //left or right margin
 		
 		//total bottom margin
 		totalMarginBottom = mContext.getResources().getDimensionPixelSize(R.dimen.dragview_container_bottom_margin);
@@ -108,7 +108,7 @@ public class DragSortViewGroup extends ViewGroup
 		sortWightView();
 	}
 		// just init view layoutparams here, not sort them, sort them later
-	private void addWightViewItem(Context context, View view ,String nickName) {
+	private void addWightViewItem(Context context, BaseView view ,String nickName) {
 		addView(view);
 		ViewGroup.MarginLayoutParams lp = new ViewGroup.MarginLayoutParams(
 				MarginLayoutParams.MATCH_PARENT,
@@ -129,10 +129,18 @@ public class DragSortViewGroup extends ViewGroup
 		ViewInfo viewInfo = new ViewInfo();
 		viewInfo.name = nickName;
 		viewInfo.order = OrderSettingUtil.getIntPref(mContext, nickName, 0);
-		viewInfo.view = (LinearLayout) view;
+		viewInfo.view =  view;
 		viewInfo.height = view.getMeasuredHeight();
 		viewInfo.topMargin = NOT_MEASURE;
 		containerList.add(viewInfo);
+	}
+	
+	public void updateChildView()
+	{
+		for (ViewInfo vi : containerList)
+		{
+			vi.view.updateDate();
+		}
 	}
 	
 	/**need to override onLayout method
@@ -184,7 +192,7 @@ public class DragSortViewGroup extends ViewGroup
 	public boolean handleMotionEventToDragView(MotionEvent event, int scrollY) {
 		mCurScrollY = scrollY;
 		if (myMode == IDLE) {
-			switch (event.getAction()) {
+			switch (event.getAction() & MotionEvent.ACTION_MASK) {
 			case MotionEvent.ACTION_DOWN:
 				if (isMessure == false)
 				{
@@ -431,9 +439,9 @@ public class DragSortViewGroup extends ViewGroup
 	}
 	
 	private void swapViewInfoContainerByOrder(int targetFrom, int to) {
-		LinearLayout tmp_RelativeLayout = containerList.get(targetFrom).view;
+		BaseView tmp_View = containerList.get(targetFrom).view;
 		containerList.get(targetFrom).view = containerList.get(to).view;
-		containerList.get(to).view = tmp_RelativeLayout;
+		containerList.get(to).view = tmp_View;
 
 		String tmp_name = containerList.get(targetFrom).name;
 		containerList.get(targetFrom).name = containerList.get(to).name;
@@ -464,8 +472,8 @@ public class DragSortViewGroup extends ViewGroup
 		
 	}
 	/**
-	 * 拖拽view松手的磁性效果
-	 * @param targetOrder
+	 * magnetic Target view by its order when MotionEvent.ACTION_UP
+	 * @see #targetOrder
 	 */
 		private void magneticTargetIem(int targetOrder) {
 			//动画开始的标记
@@ -492,7 +500,7 @@ public class DragSortViewGroup extends ViewGroup
 
 				@Override
 				public void onAnimationEnd(Animation animation) {
-					targetInfo.view.clearAnimation();// 解决移动后闪烁现象 ①
+					targetInfo.view.clearAnimation();// fix bug of view twinkle
 					TranslateAnimation anim = new TranslateAnimation(0, 0, 0, 0);
 					targetInfo.view.startAnimation(anim);
 					MarginLayoutParams lp = (MarginLayoutParams) targetInfo.view
@@ -862,7 +870,7 @@ public class DragSortViewGroup extends ViewGroup
 	public static class ViewInfo {
 		String name;
 		int order;
-		LinearLayout view;
+		BaseView view;
 		int height;
 		int topMargin;
 	}

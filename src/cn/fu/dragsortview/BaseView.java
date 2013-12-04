@@ -18,7 +18,7 @@ import android.widget.TextView;
  * 4. setBackground
  * 
  * */
-public class BaseView extends LinearLayout {
+public abstract class BaseView extends LinearLayout {
 
 	private TextView titleTV; // title
 	private ImageView handleIV; // flg
@@ -120,6 +120,9 @@ public class BaseView extends LinearLayout {
 	{
 		setBackgroundResource(resId);
 	}
+
+	public abstract void updateDate();
+
 	
 	
 }
