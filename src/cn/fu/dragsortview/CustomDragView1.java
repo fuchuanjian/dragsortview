@@ -13,16 +13,15 @@ import android.widget.TextView;
  * custom  view inherit from BaseView
  * Just need to add LayoutParams when view init
  * */ 
-public class CustomDragView extends BaseView
+public class CustomDragView1 extends BaseView
 {
 	private TextView tv;
-	private ImageView iv;
-	public CustomDragView(Context context)
+	public CustomDragView1(Context context)
 	{
 		super(context);
 		init(context);
 	}
-	public CustomDragView(Context context, AttributeSet attrs)
+	public CustomDragView1(Context context, AttributeSet attrs)
 	{
 		super(context, attrs);
 		init(context);
@@ -30,13 +29,12 @@ public class CustomDragView extends BaseView
 	private void init(Context context)
 	{
 		LayoutInflater inflater = LayoutInflater.from(context);
-		View view = inflater.inflate(R.layout.sample_view, null);
+		View view = inflater.inflate(R.layout.sample_view1, null);
 		tv = (TextView) view.findViewById(R.id.view_description_tv);
-		iv = (ImageView) view.findViewById(R.id.view_head_picture);
 		RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
 		//display width & height
 		lp.width = mScreenW;
-		lp.height = 200;
+		lp.height = 120;
 		int paddingLeft = mHeaderPadding - dragViewMarginSide;
 		int paddingRight = mHeaderPadding + dragViewMarginSide;
 		view.setPadding(paddingLeft, 0, paddingRight, 0);
@@ -44,11 +42,10 @@ public class CustomDragView extends BaseView
 		setContentView(view);   //setContentView to baseview
 
 	}
-	public void setPicAndText(int drawableId, String text)
+	public void setContentText( String text)
 	{
-		iv.setImageResource(drawableId);
 		tv.setText(text);
-		setTileBar(drawableId, text, -1);
+		setTileBar(-1, text, -1);
 	}
 	
 	@Override

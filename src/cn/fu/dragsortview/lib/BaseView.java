@@ -1,5 +1,10 @@
-package cn.fu.dragsortview;
+package cn.fu.dragsortview.lib;
 
+import cn.fu.dragsortview.R;
+import cn.fu.dragsortview.R.dimen;
+import cn.fu.dragsortview.R.drawable;
+import cn.fu.dragsortview.R.id;
+import cn.fu.dragsortview.R.layout;
 import android.content.Context;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
@@ -21,9 +26,9 @@ import android.widget.TextView;
 public abstract class BaseView extends LinearLayout {
 
 	private TextView titleTV; // title
-	private ImageView handleIV; // flg
+	private ImageView handleIV; 
 	private RelativeLayout titleLayout;
-	private ImageView titleIV; // flg
+	private ImageView titleIV; 
 	private View contentView;
 	
 	private final int IDLE = 0;
@@ -32,8 +37,8 @@ public abstract class BaseView extends LinearLayout {
 	private int mMode = IDLE;
 	
 	protected int mScreenW; // screen width
-	protected int mHeaderPadding = 15; // Header的左右Padding
-	protected int dragViewMarginSide = 4;
+	protected int mHeaderPadding = 15; // Header Padding
+	protected int dragViewMarginSide = 5;
 	public BaseView(Context context) {
 		super(context);
 		initBaseView(context);
@@ -58,6 +63,7 @@ public abstract class BaseView extends LinearLayout {
 		titlelLayoutParams.width = mScreenW;
 		// or u can resize it
 		titlelLayoutParams.height = getResources().getDimensionPixelSize(R.dimen.drag_view_title_height);
+		titleLayout.setPadding(mHeaderPadding - dragViewMarginSide, 0, mHeaderPadding + dragViewMarginSide, 0);
 		titleLayout.setLayoutParams(titlelLayoutParams);
 
 		addView(titleLayout);
@@ -68,14 +74,14 @@ public abstract class BaseView extends LinearLayout {
 		
 
 	}
-	/***  Drawable res Id  , -1 means use default resource
+	/***  Drawable res Id  , less than 0 means use default resource
 	 * @param titleImgResId   
 	 * @param title
 	 * @param handleImgResId
 	 */
 	public void setTileBar(int titleImgResId, String title, int handleImgResId)
 	{
-		if (titleImgResId != -1)
+		if (titleImgResId > 0)
 		{
 			titleIV.setImageResource(titleImgResId);
 		}
@@ -83,7 +89,7 @@ public abstract class BaseView extends LinearLayout {
 		{
 			titleTV.setText(title);			
 		}
-		if (handleImgResId != -1)
+		if (handleImgResId > 0)
 		{			
 			handleIV.setImageResource(handleImgResId);
 		}
